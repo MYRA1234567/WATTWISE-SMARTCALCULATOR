@@ -1,0 +1,62 @@
+/* Custom CSS Overrides and Animations */
+
+section, div, body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #fff7ed;
+}
+::-webkit-scrollbar-thumb {
+  background: #fdba74;
+  border-radius: 4px;
+}
+
+button, input, select {
+  touch-action: manipulation;
+}
+
+/* FULL DARK MODE STYLES */
+body.dark-theme {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+body.dark-theme .bg-white,
+body.dark-theme .bg-slate-50,
+body.dark-theme .bg-orange-50\/60,
+body.dark-theme .bg-slate-100 {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+body.dark-theme .text-slate-800,
+body.dark-theme .text-slate-700,
+body.dark-theme .text-slate-600,
+body.dark-theme .font-semibold,
+body.dark-theme h1, 
+body.dark-theme h2, 
+body.dark-theme h3 {
+  color: #f8fafc !important;
+}
+
+body.dark-theme .text-slate-500,
+body.dark-theme .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+body.dark-theme input, 
+body.dark-theme select {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+  border-color: #475569 !important;
+}
+
+body.dark-theme tr:hover {
+  background-color: #334155 !important;
+}

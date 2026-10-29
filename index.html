@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wattwise - Smart Electricity & Utility Tracker</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body id="app-body" class="bg-orange-50 text-slate-800 flex flex-col min-h-screen transition-colors duration-200 antialiased">
+
+  <!-- 1. WELCOME / SPLASH SCREEN OVERLAY -->
+  <section id="page-splash" class="fixed inset-0 z-50 bg-white dark-card flex flex-col items-center justify-between p-6 sm:p-12 text-center overflow-y-auto">
+    <div class="flex flex-col items-center space-y-4 sm:space-y-6 my-auto pt-8 sm:pt-0">
+      <div class="w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-orange-100/60 border-2 border-orange-300 flex items-center justify-center shadow-inner">
+        <i data-lucide="zap" class="w-16 h-16 sm:w-20 sm:h-20 text-orange-600 stroke-[1.5]"></i>
+      </div>
+      
+      <div class="space-y-1">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-orange-600 tracking-tight">Wattwise</h1>
+        <p class="text-xs sm:text-sm font-medium text-slate-500 dark-text">Smart Electricity & Utility Tracker</p>
+      </div>
+    </div>
+
+    <div class="w-full max-w-xs sm:max-w-sm space-y-3 mb-6">
+      <button onclick="handleSplashAction('register')" class="w-full py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm rounded-2xl shadow-md transition-all transform active:scale-95">
+        Get Started
+      </button>
+      <button onclick="handleSplashAction('login')" class="w-full py-3.5 bg-orange-100/80 hover:bg-orange-200/80 text-orange-800 font-bold text-sm rounded-2xl border border-orange-200 transition-all transform active:scale-95">
+        I already have an account
+      </button>
+      <button onclick="handleSplashAction('guest')" class="w-full py-2 text-slate-400 hover:text-slate-600 font-semibold text-xs transition">
+        Continue as Guest
+      </button>
+    </div>
+  </section>
+
+  <!-- 2. MAIN APPLICATION NAVBAR -->
+  <header class="bg-orange-600 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      
+      <div class="flex items-center space-x-2 cursor-pointer" onclick="showSplash()">
+        <i data-lucide="zap" class="w-6 h-6 text-yellow-300"></i>
+        <span class="text-xl font-bold tracking-wide">Wattwise</span>
+      </div>
+
+      <nav id="main-nav" class="hidden md:flex space-x-6 font-medium text-sm">
+        <button onclick="showPage('dashboard')" id="nav-dashboard" class="hover:text-yellow-200 transition underline decoration-2 underline-offset-8">Dashboard</button>
+        <button onclick="showPage('appliances')" id="nav-appliances" class="hover:text-yellow-200 transition">Appliance Management</button>
+        <button onclick="showPage('analytics')" id="nav-analytics" class="hover:text-yellow-200 transition">Reports & Analytics</button>
+        <button onclick="showPage('settings')" id="nav-settings" class="hover:text-yellow-200 transition">Settings & Profile</button>
+      </nav>
+
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <div class="hidden sm:flex text-xs bg-orange-700 px-3 py-1.5 rounded-full items-center gap-1.5 border border-orange-500">
+          <span class="text-orange-200">Active Rate:</span>
+          <span class="font-bold text-white">₱<span id="header-rate">14.7833</span>/kWh</span>
+        </div>
+
+        <div id="user-header-widget">
+          <button onclick="openAuthModal('login')" class="bg-white text-orange-600 hover:bg-orange-50 text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i data-lucide="log-in" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Sign In</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3. MAIN CONTENT CONTAINER -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 mb-16 md:mb-0">
+
+    <!-- PAGE 1: DASHBOARD -->
+    <section id="page-dashboard" class="space-y-6">
+      <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-5 sm:p-6 text-white shadow-lg flex justify-between items-center">
+        <div>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-bold">Welcome, <span id="dash-username">Guest</span>!</h1>
+          <p class="text-xs sm:text-sm text-orange-100 mt-1">Here is your estimated electricity usage and cost summary for this month.</p>
+        </div>
+        <div class="hidden sm:block text-right bg-white/10 backdrop-blur-md p-3 rounded-xl border border-white/20">
+          <div class="text-xs text-orange-200">Account Status</div>
+          <div class="font-semibold text-sm" id="dash-account-status">Guest Account</div>
+        </div>
+      </div>
+
+      <!-- Summary Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Devices</div>
+          <div class="text-xl sm:text-2xl font-extrabold text-slate-800 dark-text mt-1 sm:mt-2" id="card-active-devices">0</div>
+        </div>
+        <div class="bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Estimated Monthly kWh</div>
+          <div class="text-xl sm:text-2xl font-extrabold text-slate-800 dark-text mt-1 sm:mt-2"><span id="card-total-kwh">0.00</span> <span class="text-xs sm:text-sm font-normal">kWh</span></div>
+        </div>
+        <div class="bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tariff Rate</div>
+          <div class="text-xl sm:text-2xl font-extrabold text-slate-800 dark-text mt-1 sm:mt-2">₱<span id="card-tariff">14.7833</span></div>
+        </div>
+        <div class="bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Projected Monthly Bill</div>
+          <div class="text-xl sm:text-2xl font-extrabold text-orange-600 mt-1 sm:mt-2">₱<span id="card-projected-cost">0.00</span></div>
+        </div>
+      </div>
+
+      <!-- Main Dashboard Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm space-y-4">
+          <div class="flex items-center space-x-2 border-b pb-3">
+            <i data-lucide="alert-triangle" class="text-orange-500 w-5 h-5"></i>
+            <h2 class="font-bold text-slate-800 dark-text text-sm sm:text-base">High Consumption Alerts</h2>
+          </div>
+          <div id="alerts-container" class="space-y-3"></div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm space-y-4">
+          <div class="flex justify-between items-center border-b pb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="clock" class="text-orange-500 w-5 h-5"></i>
+              <h2 class="font-bold text-slate-800 dark-text text-sm sm:text-base">Quick Runtime Logger (Adjust Minutes)</h2>
+            </div>
+            <span class="text-xs text-slate-400">+/- 1 min per click</span>
+          </div>
+          <div id="quick-logger-list" class="divide-y divide-slate-100"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: APPLIANCE MANAGEMENT -->
+    <section id="page-appliances" class="space-y-6 hidden">
+      <div class="flex flex-col lg:flex-row gap-6">
+        <div class="flex-1 bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h2 class="font-bold text-slate-800 dark-text text-base sm:text-lg">Appliance Catalog</h2>
+            <button onclick="openModal()" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> Add Appliance
+            </button>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="search-input" oninput="renderAppliancesTable()" placeholder="Search appliances..." class="flex-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <select id="category-filter" onchange="renderAppliancesTable()" class="px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+              <option value="All">All Categories</option>
+              <option value="Cooling">Cooling</option>
+              <option value="Kitchen">Kitchen</option>
+              <option value="Lighting">Lighting</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Laundry">Laundry</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <div class="inline-block min-w-full align-middle px-4 sm:px-0">
+              <table class="min-w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr class="border-b bg-slate-50 dark-bg text-slate-600 dark-text">
+                    <th class="p-2.5 sm:p-3">Appliance</th>
+                    <th class="p-2.5 sm:p-3">Category</th>
+                    <th class="p-2.5 sm:p-3">Wattage</th>
+                    <th class="p-2.5 sm:p-3">Daily Runtime</th>
+                    <th class="p-2.5 sm:p-3">Est. Daily Cost</th>
+                    <th class="p-2.5 sm:p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="appliance-table-body" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full lg:w-80 bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm space-y-4 self-start">
+          <h2 class="font-bold text-slate-800 dark-text text-base sm:text-lg border-b pb-3">Tariff Configuration</h2>
+         <div class="space-y-3">
+               <label class="block text-xs font-semibold text-slate-600 dark-text">Provider Preset</label>
+                <select id="tariff-preset" onchange="updateTariffPreset()" class="w-full px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <option value="15.0615">Meralco Residential (₱15.0615/kWh)</option>
+                  <option value="15.0200">Meralco Estimated (₱15.0200/kWh)</option>
+                  <option value="12.5000">Provincial Standard (₱12.5000/kWh)</option>
+                  <option value="custom">Custom Rate</option>
+                </select>
+                  <div>
+                <label class="block text-xs font-semibold text-slate-600 dark-text mt-2">Active Rate (₱/kWh)</label>
+                <input type="number" step="0.0001" id="tariff-input" onchange="updateCustomTariff()" value="15.0615" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: REPORTS & ANALYTICS WITH BILL COMPARISON MATRIX -->
+    <section id="page-analytics" class="space-y-6 hidden">
+      <div class="bg-white dark-card p-4 sm:p-5 rounded-xl border border-orange-100 shadow-sm space-y-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
+          <div>
+            <h2 class="font-bold text-slate-800 dark-text text-base sm:text-lg">Electricity Bill Timeframe Comparison</h2>
+            <p class="text-xs text-slate-400">Accurate bill comparison breakdown for Daily, Weekly, Monthly, and Yearly periods</p>
+          </div>
+
+          <button onclick="exportCSV()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white text-xs px-3.5 py-2 rounded-lg transition flex items-center justify-center gap-1.5">
+            <i data-lucide="download" class="w-4 h-4"></i> Export CSV
+          </button>
+        </div>
+
+        <!-- Multi-Timeframe Comparison Cards Matrix -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-4 bg-orange-50/70 rounded-xl border border-orange-200">
+            <div class="text-xs font-bold text-orange-600 uppercase tracking-wider">Daily Bill (24 Hours)</div>
+            <div class="text-xl font-extrabold text-slate-800 dark-text mt-2">₱<span id="cmp-daily-cost">0.00</span></div>
+            <div class="text-xs text-slate-500 mt-1"><span id="cmp-daily-kwh">0.00</span> kWh/day</div>
+          </div>
+
+          <div class="p-4 bg-orange-50/70 rounded-xl border border-orange-200">
+            <div class="text-xs font-bold text-orange-600 uppercase tracking-wider">Weekly Bill (7 Days)</div>
+            <div class="text-xl font-extrabold text-slate-800 dark-text mt-2">₱<span id="cmp-weekly-cost">0.00</span></div>
+            <div class="text-xs text-slate-500 mt-1"><span id="cmp-weekly-kwh">0.00</span> kWh/week</div>
+          </div>
+
+          <div class="p-4 bg-orange-50/70 rounded-xl border border-orange-200">
+            <div class="text-xs font-bold text-orange-600 uppercase tracking-wider">Monthly Bill (30 Days)</div>
+            <div class="text-xl font-extrabold text-slate-800 dark-text mt-2">₱<span id="cmp-monthly-cost">0.00</span></div>
+            <div class="text-xs text-slate-500 mt-1"><span id="cmp-monthly-kwh">0.00</span> kWh/month</div>
+          </div>
+
+          <div class="p-4 bg-orange-50/70 rounded-xl border border-orange-200">
+            <div class="text-xs font-bold text-orange-600 uppercase tracking-wider">Yearly Bill (365 Days)</div>
+            <div class="text-xl font-extrabold text-slate-800 dark-text mt-2">₱<span id="cmp-yearly-cost">0.00</span></div>
+            <div class="text-xs text-slate-500 mt-1"><span id="cmp-yearly-kwh">0.00</span> kWh/year</div>
+          </div>
+        </div>
+
+        <!-- Interactive Visual Analytics Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="border rounded-xl p-3 sm:p-4 flex flex-col justify-between bg-slate-50/30">
+            <h3 class="text-xs sm:text-sm font-semibold text-slate-700 dark-text mb-3 text-center">Timeframe Expense Comparison (PHP)</h3>
+            <div class="relative w-full h-56 sm:h-72">
+              <canvas id="timeframeBarChart"></canvas>
+            </div>
+          </div>
+          <div class="border rounded-xl p-3 sm:p-4 flex flex-col justify-between bg-slate-50/30">
+            <h3 class="text-xs sm:text-sm font-semibold text-slate-700 dark-text mb-3 text-center">Appliance Category Share</h3>
+            <div class="relative w-full h-56 sm:h-72">
+              <canvas id="categoryPieChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Individual Appliance Cost Comparison Table -->
+        <div class="space-y-3 pt-2">
+          <h3 class="font-bold text-slate-800 dark-text text-xs sm:text-sm">Appliance Timeframe Cost Breakdown</h3>
+          <div class="overflow-x-auto rounded-lg border border-slate-200">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100 dark-bg text-slate-600 dark-text font-semibold border-b border-slate-200">
+                  <th class="p-2.5 sm:p-3">Appliance</th>
+                  <th class="p-2.5 sm:p-3">Runtime</th>
+                  <th class="p-2.5 sm:p-3">Daily Cost</th>
+                  <th class="p-2.5 sm:p-3">Weekly Cost</th>
+                  <th class="p-2.5 sm:p-3">Monthly Cost</th>
+                  <th class="p-2.5 sm:p-3 text-right">Yearly Cost</th>
+                </tr>
+              </thead>
+              <tbody id="analytics-appliance-breakdown" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 4: USER PROFILE & APP SETTINGS -->
+    <section id="page-settings" class="space-y-6 hidden">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <div class="bg-white dark-card p-4 sm:p-6 rounded-xl border border-orange-100 shadow-sm space-y-4">
+          <div class="flex items-center space-x-4 border-b pb-4">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-lg sm:text-xl shrink-0" id="profile-avatar">
+              G
+            </div>
+            <div class="min-w-0 flex-1">
+              <h2 class="text-lg sm:text-xl font-bold text-slate-800 dark-text truncate" id="profile-name">Guest User</h2>
+              <p class="text-xs text-slate-500 truncate" id="profile-email">Sign in to manage your personalized session.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs">
+            <div class="p-3 bg-slate-50 dark-bg rounded-lg border">
+              <span class="text-slate-400 block">Account Status</span>
+              <span class="font-bold text-slate-700 dark-text text-sm" id="profile-status">Guest</span>
+            </div>
+            <div class="p-3 bg-slate-50 dark-bg rounded-lg border">
+              <span class="text-slate-400 block">Registered Devices</span>
+              <span class="font-bold text-slate-700 dark-text text-sm" id="profile-appliance-count">0 Devices</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark-card p-4 sm:p-6 rounded-xl border border-orange-100 shadow-sm space-y-6">
+          <h3 class="font-bold text-slate-800 dark-text text-base sm:text-lg border-b pb-3">App Preferences & Actions</h3>
+          
+          <div class="space-y-4 text-xs sm:text-sm">
+            <div class="flex items-center justify-between p-3 border rounded-lg gap-2">
+              <div>
+                <div class="font-semibold text-slate-800 dark-text">Dark Mode Preference</div>
+                <div class="text-[11px] sm:text-xs text-slate-400">Toggle light or dark interface theme</div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()" class="sr-only peer">
+                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+              </label>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg gap-3">
+              <div>
+                <div class="font-semibold text-slate-800 dark-text">Reset Current Session</div>
+                <div class="text-[11px] sm:text-xs text-slate-400">Clear all appliances in the active view</div>
+              </div>
+              <button onclick="clearCurrentSession()" class="bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold px-4 py-2 rounded-lg transition">
+                Reset Current Data
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t flex justify-end">
+            <button onclick="logoutUser()" id="profile-logout-btn" class="hidden w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-semibold px-6 py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+              <i data-lucide="log-out" class="w-4 h-4"></i> Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white dark-card border-t border-slate-200 dark:border-slate-700 z-40 flex justify-around items-center py-2 text-[10px] font-semibold text-slate-500 shadow-lg">
+    <button onclick="showPage('dashboard')" id="m-nav-dashboard" class="flex flex-col items-center gap-1 text-orange-600">
+      <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+    </button>
+    <button onclick="showPage('appliances')" id="m-nav-appliances" class="flex flex-col items-center gap-1">
+      <i data-lucide="plug" class="w-5 h-5"></i> Appliances
+    </button>
+    <button onclick="showPage('analytics')" id="m-nav-analytics" class="flex flex-col items-center gap-1">
+      <i data-lucide="bar-chart-3" class="w-5 h-5"></i> Analytics
+    </button>
+    <button onclick="showPage('settings')" id="m-nav-settings" class="flex flex-col items-center gap-1">
+      <i data-lucide="settings" class="w-5 h-5"></i> Settings
+    </button>
+  </nav>
+
+  <!-- AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark-card rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-base sm:text-lg font-bold text-slate-800 dark-text" id="auth-modal-title">Sign In to Wattwise</h3>
+        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+        <div id="auth-name-field" class="hidden">
+          <label class="block text-xs font-semibold text-slate-600 dark-text">Full Name</label>
+          <input type="text" id="auth-name" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark-text">Email Address</label>
+          <input type="email" id="auth-email" required class="w-full mt-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark-text">Password</label>
+          <input type="password" id="auth-password" required class="w-full mt-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+
+        <button type="submit" id="auth-submit-btn" class="w-full py-2.5 text-xs sm:text-sm text-white bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold transition mt-2">
+          Sign In
+        </button>
+      </form>
+
+      <div class="text-center text-xs text-slate-500 pt-2 border-t">
+        <span id="auth-toggle-text">Don't have an account?</span>
+        <button onclick="switchAuthMode()" id="auth-toggle-btn" class="text-orange-600 font-bold ml-1 hover:underline">Register</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT APPLIANCE MODAL -->
+  <div id="appliance-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark-card rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4">
+      <h3 class="text-base sm:text-lg font-bold text-slate-800 dark-text" id="modal-title">Add Appliance</h3>
+      <form id="appliance-form" onsubmit="saveAppliance(event)" class="space-y-3">
+        <input type="hidden" id="modal-app-id">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark-text">Appliance Name</label>
+          <input type="text" id="modal-app-name" required class="w-full mt-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark-text">Category</label>
+          <select id="modal-app-category" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <option value="Cooling">Cooling</option>
+            <option value="Kitchen">Kitchen</option>
+            <option value="Lighting">Lighting</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Laundry">Laundry</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark-text">Wattage (W)</label>
+          <input type="number" id="modal-app-wattage" required min="1" class="w-full mt-1 px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark-text">Daily Operating Hours & Minutes</label>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <div>
+              <label class="text-[10px] text-slate-400">Hours (0-24)</label>
+              <input type="number" id="modal-app-hours" required min="0" max="24" value="0" class="w-full px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400">Minutes (0-59)</label>
+              <input type="number" id="modal-app-minutes" required min="0" max="59" value="0" class="w-full px-3 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3 pt-3">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs sm:text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 text-xs sm:text-sm text-white bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Global Footer -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-6 mt-8 hidden md:block">
+    <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+      <p>© 2026 Wattwise Capstone Team (Salvador, Ella, Baligasa). All rights reserved.</p>
+      <p class="text-slate-500">Designed following ISO/IEC 25010 Quality Standards. Software-based utility calculation estimation tool.</p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
